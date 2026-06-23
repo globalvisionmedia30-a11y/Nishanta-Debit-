@@ -1,0 +1,6 @@
+{
+  "name": "AI Study Assistant",
+  "description": "An AI-powered study companion featuring custom flashcard generation, persistent progress tracking, and intelligent study schedules.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
