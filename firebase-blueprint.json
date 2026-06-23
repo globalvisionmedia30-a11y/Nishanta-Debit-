@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "FlashcardSet": {
+      "title": "FlashcardSet",
+      "description": "Represents a flashcard set for Leitner spacing retrieval.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "cards": { "type": "array" },
+        "cardsReviewCount": { "type": "number" },
+        "cardsMasteredCount": { "type": "number" }
+      },
+      "required": ["title", "subject", "createdAt", "cards"]
+    },
+    "StudySchedule": {
+      "title": "StudySchedule",
+      "description": "An AI-constructed day-by-day learning program.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "objective": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "totalDays": { "type": "number" },
+        "progressPercent": { "type": "number" },
+        "dailySchedules": { "type": "array" }
+      },
+      "required": ["title", "subject", "objective", "createdAt", "totalDays", "progressPercent", "dailySchedules"]
+    },
+    "StudyLog": {
+      "title": "StudyLog",
+      "description": "A progress log entries of student study actions.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "subject": { "type": "string" },
+        "durationMinutes": { "type": "number" },
+        "type": { "type": "string" },
+        "notes": { "type": "string" },
+        "cardsReviewed": { "type": "number" }
+      },
+      "required": ["date", "subject", "durationMinutes", "type"]
+    }
+  },
+  "firestore": {
+    "flashcard_sets": {
+      "schema": { "$ref": "#/entities/FlashcardSet" },
+      "description": "List of user learning deck card sets."
+    },
+    "study_schedules": {
+      "schema": { "$ref": "#/entities/StudySchedule" },
+      "description": "User generated study courses and tracks."
+    },
+    "study_logs": {
+      "schema": { "$ref": "#/entities/StudyLog" },
+      "description": "Audit metrics of completed learning times and events."
+    }
+  }
+}

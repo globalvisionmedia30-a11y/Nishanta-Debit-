@@ -10,8 +10,56 @@ import {
   setDoc,
   writeBatch
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 import { FlashcardSet, StudySchedule, StudyLog, Flashcard, DailyScheduleTask } from "../types";
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid || null,
+      email: auth.currentUser?.email || null,
+      emailVerified: auth.currentUser?.emailVerified || null,
+      isAnonymous: auth.currentUser?.isAnonymous || null,
+      tenantId: auth.currentUser?.tenantId || null,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
 
 // Starter Flashcard set
 const DEFAULT_FLASHCARD_SETS: FlashcardSet[] = [
@@ -249,25 +297,36 @@ export async function getFlashcardSets(): Promise<FlashcardSet[]> {
     // Sort by createdAt descending
     return setsList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (e) {
-    console.error("Firestore getFlashcardSets error:", e);
-    return DEFAULT_FLASHCARD_SETS;
+    handleFirestoreError(e, OperationType.GET, "flashcard_sets");
   }
 }
 
 export async function addFlashcardSet(set: Omit<FlashcardSet, 'id'>): Promise<FlashcardSet> {
-  const colRef = collection(db, "flashcard_sets");
-  const docRef = await addDoc(colRef, set);
-  return { id: docRef.id, ...set } as FlashcardSet;
+  try {
+    const colRef = collection(db, "flashcard_sets");
+    const docRef = await addDoc(colRef, set);
+    return { id: docRef.id, ...set } as FlashcardSet;
+  } catch (e) {
+    handleFirestoreError(e, OperationType.CREATE, "flashcard_sets");
+  }
 }
 
 export async function updateFlashcardSet(id: string, updates: Partial<FlashcardSet>): Promise<void> {
-  const docRef = doc(db, "flashcard_sets", id);
-  await updateDoc(docRef, updates);
+  try {
+    const docRef = doc(db, "flashcard_sets", id);
+    await updateDoc(docRef, updates);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.UPDATE, `flashcard_sets/${id}`);
+  }
 }
 
 export async function deleteFlashcardSet(id: string): Promise<void> {
-  const docRef = doc(db, "flashcard_sets", id);
-  await deleteDoc(docRef);
+  try {
+    const docRef = doc(db, "flashcard_sets", id);
+    await deleteDoc(docRef);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, `flashcard_sets/${id}`);
+  }
 }
 
 
@@ -285,25 +344,36 @@ export async function getStudySchedules(): Promise<StudySchedule[]> {
     });
     return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (e) {
-    console.error("Firestore getStudySchedules error:", e);
-    return DEFAULT_SCHEDULES;
+    handleFirestoreError(e, OperationType.GET, "study_schedules");
   }
 }
 
 export async function addStudySchedule(schedule: Omit<StudySchedule, 'id'>): Promise<StudySchedule> {
-  const colRef = collection(db, "study_schedules");
-  const docRef = await addDoc(colRef, schedule);
-  return { id: docRef.id, ...schedule } as StudySchedule;
+  try {
+    const colRef = collection(db, "study_schedules");
+    const docRef = await addDoc(colRef, schedule);
+    return { id: docRef.id, ...schedule } as StudySchedule;
+  } catch (e) {
+    handleFirestoreError(e, OperationType.CREATE, "study_schedules");
+  }
 }
 
 export async function updateStudySchedule(id: string, updates: Partial<StudySchedule>): Promise<void> {
-  const docRef = doc(db, "study_schedules", id);
-  await updateDoc(docRef, updates);
+  try {
+    const docRef = doc(db, "study_schedules", id);
+    await updateDoc(docRef, updates);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.UPDATE, `study_schedules/${id}`);
+  }
 }
 
 export async function deleteStudySchedule(id: string): Promise<void> {
-  const docRef = doc(db, "study_schedules", id);
-  await deleteDoc(docRef);
+  try {
+    const docRef = doc(db, "study_schedules", id);
+    await deleteDoc(docRef);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, `study_schedules/${id}`);
+  }
 }
 
 
@@ -321,18 +391,25 @@ export async function getStudyLogs(): Promise<StudyLog[]> {
     });
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   } catch (e) {
-    console.error("Firestore getStudyLogs error:", e);
-    return DEFAULT_LOGS;
+    handleFirestoreError(e, OperationType.GET, "study_logs");
   }
 }
 
 export async function addStudyLog(log: Omit<StudyLog, 'id'>): Promise<StudyLog> {
-  const colRef = collection(db, "study_logs");
-  const docRef = await addDoc(colRef, log);
-  return { id: docRef.id, ...log } as StudyLog;
+  try {
+    const colRef = collection(db, "study_logs");
+    const docRef = await addDoc(colRef, log);
+    return { id: docRef.id, ...log } as StudyLog;
+  } catch (e) {
+    handleFirestoreError(e, OperationType.CREATE, "study_logs");
+  }
 }
 
 export async function deleteStudyLog(id: string): Promise<void> {
-  const docRef = doc(db, "study_logs", id);
-  await deleteDoc(docRef);
+  try {
+    const docRef = doc(db, "study_logs", id);
+    await deleteDoc(docRef);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, `study_logs/${id}`);
+  }
 }
